@@ -7,12 +7,9 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error
 import joblib
 import os
 
-st.write("Current Working Directory:", os.getcwd())
-
-print(os.listdir())  # Check available files
-
-# Load the dataset (Replace 'housing_data.csv' with actual dataset path)
-df = pd.read_csv("C:\Users\sydne\Downloads\housing_data.csv")
+# Load the dataset
+data_path = '/mnt/data/housing_data.csv'
+df = pd.read_csv(data_path)
 
 # Preprocess the data (handle missing values, encode categorical variables, etc.)
 df.fillna(df.median(), inplace=True)
@@ -27,7 +24,8 @@ model = LinearRegression()
 model.fit(X_train, y_train)
 
 # Save the trained model
-joblib.dump(model, 'housing_price_model.pkl')
+model_path = '/mnt/data/housing_price_model.pkl'
+joblib.dump(model, model_path)
 
 # Evaluate the model
 y_pred = model.predict(X_test)
@@ -46,11 +44,16 @@ def main():
         inputs[col] = st.number_input(f"Enter {col}", value=0.0)
     
     if st.button("Predict Price"):
-        model = joblib.load('housing_price_model.pkl')
-        input_data = np.array([list(inputs.values())]).reshape(1, -1)
-        prediction = model.predict(input_data)
-        st.write(f"Predicted Housing Price: ${prediction[0]:,.2f}")
+        if os.path.exists(model_path):
+            model = joblib.load(model_path)
+            input_data = np.array([list(inputs.values())]).reshape(1, -1)
+            prediction = model.predict(input_data)
+            st.write(f"Predicted Housing Price: ${prediction[0]:,.2f}")
+        else:
+            st.error("Model file not found. Please retrain the model.")
 
 if __name__ == "__main__":
     main()
+
+
 
