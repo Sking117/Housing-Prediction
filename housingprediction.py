@@ -2,65 +2,71 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LinearRegression
-from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.ensemble import RandomForestRegressor
 import joblib
-import os
-import os
-print("Current directory:", os.getcwd())
-print("Files in directory:", os.listdir("/mnt/data"))
-with open('/mnt/data/housing_data.csv', 'r') as f:
-    print(f.readline())  # Read first line to confirm accessibility
 
-# Load the dataset
-data_path = os.path.abspath('housing_data.csv')  # Ensure correct path resolution
-df = pd.read_excel('/mnt/data/housing_data.csv')
+# Load dataset
+data_path = 'housing_data.csv'
+df = pd.read_csv(data_path)
 
+# Preprocessing
+def preprocess_data(df):
+    df = df.dropna()  # Handle missing values by dropping (can be improved)
+    X = df.drop(columns=['price'])  # Features (Assuming 'price' is the target variable)
+    y = df['price']  # Target
+    
+    # Identify numerical and categorical features
+    num_features = X.select_dtypes(include=['int64', 'float64']).columns
+    cat_features = X.select_dtypes(include=['object']).columns
+    
+    # Preprocessing pipeline
+    preprocessor = ColumnTransformer([
+        ('num', StandardScaler(), num_features),
+        ('cat', OneHotEncoder(handle_unknown='ignore'), cat_features)
+    ])
+    
+    return X, y, preprocessor
 
-
-# Preprocess the data (handle missing values, encode categorical variables, etc.)
-df.fillna(df.median(), inplace=True)
-X = df.drop(columns=['Price'])  # Assuming 'Price' is the target variable
-y = df['Price']
-
-# Split the data
+X, y, preprocessor = preprocess_data(df)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train the regression model
-model = LinearRegression()
+# Model training
+model = Pipeline([
+    ('preprocessor', preprocessor),
+    ('regressor', RandomForestRegressor(n_estimators=100, random_state=42))
+])
+
 model.fit(X_train, y_train)
 
-# Save the trained model
-model_path = '/mnt/data/housing_price_model.pkl'
-joblib.dump(model, model_path)
+# Save model
+joblib.dump(model, "housing_price_model.pkl")
 
-# Evaluate the model
-y_pred = model.predict(X_test)
-mae = mean_absolute_error(y_test, y_pred)
-mse = mean_squared_error(y_test, y_pred)
-
-print(f"Model Evaluation: MAE={mae}, MSE={mse}")
-
-# Streamlit Web Application
+# Streamlit App
 def main():
-    st.title("Housing Price Prediction")
-    st.write("Enter the details below to predict the housing price:")
+    st.title("Housing Price Prediction App")
     
-    inputs = {}
+    # Get user input
+    input_data = {}
     for col in X.columns:
-        inputs[col] = st.number_input(f"Enter {col}", value=0.0)
+        if col in df.select_dtypes(include=['object']).columns:
+            input_data[col] = st.selectbox(f"Select {col}", df[col].unique())
+        else:
+            input_data[col] = st.number_input(f"Enter {col}", value=float(df[col].median()))
     
     if st.button("Predict Price"):
-        if os.path.exists(model_path):
-            model = joblib.load(model_path)
-            input_data = np.array([list(inputs.values())]).reshape(1, -1)
-            prediction = model.predict(input_data)
-            st.write(f"Predicted Housing Price: ${prediction[0]:,.2f}")
-        else:
-            st.error("Model file not found. Please retrain the model.")
+        input_df = pd.DataFrame([input_data])
+        prediction = model.predict(input_df)
+        st.write(f"Predicted Price: ${prediction[0]:,.2f}")
 
 if __name__ == "__main__":
     main()
 
+# Deployment steps:
+# 1. Save this script and the model file in a GitHub repository.
+# 2. Create a requirements.txt file with necessary libraries.
+# 3. Deploy on Streamlit Cloud using the repository URL.
 
 
