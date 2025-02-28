@@ -11,10 +11,14 @@ import joblib
 # Load dataset
 data_path = 'housing_data.csv'
 df = pd.read_csv(data_path)
+print(df.head())  # Ensure data is loaded correctly
+
+
 
 # Preprocessing
 def preprocess_data(df):
     df = df.dropna()  # Handle missing values by dropping (can be improved)
+    df.fillna(df.mode().iloc[0], inplace=True)
     X = df.drop(columns=['SalePrice'])  # Features (Assuming 'price' is the target variable)
     y = df['SalePrice']  # Target
     
@@ -31,7 +35,7 @@ def preprocess_data(df):
     return X, y, preprocessor
 
 X, y, preprocessor = preprocess_data(df)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
 
 # Model training
 model = Pipeline([
