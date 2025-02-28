@@ -1,4 +1,11 @@
+import streamlit as st
+import pandas as pd
 
+# Define `data` before using it
+data = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+
+# Now you can use `data`
+st.write(data)
 # Preprocess Data (Handle missing values and categorical variables if necessary)
 data = data.dropna()
 X = data.drop(columns=['Price'])
