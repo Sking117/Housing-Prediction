@@ -15,8 +15,8 @@ df = pd.read_csv(data_path)
 # Preprocessing
 def preprocess_data(df):
     df = df.dropna()  # Handle missing values by dropping (can be improved)
-    X = df.drop(columns=['price'])  # Features (Assuming 'price' is the target variable)
-    y = df['price']  # Target
+    X = df.drop(columns=['SalePrice'])  # Features (Assuming 'price' is the target variable)
+    y = df['SalePrice']  # Target
     
     # Identify numerical and categorical features
     num_features = X.select_dtypes(include=['int64', 'float64']).columns
