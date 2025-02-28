@@ -6,10 +6,17 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import joblib
 import os
+import os
+print("Current directory:", os.getcwd())
+print("Files in directory:", os.listdir("/mnt/data"))
+with open('/mnt/data/housing_data.csv', 'r') as f:
+    print(f.readline())  # Read first line to confirm accessibility
 
 # Load the dataset
-data_path = '/mnt/data/housing_data.csv'
-df = pd.read_csv(data_path)
+data_path = os.path.abspath('housing_data.csv')  # Ensure correct path resolution
+df = pd.read_excel('/mnt/data/housing_data.csv')
+
+
 
 # Preprocess the data (handle missing values, encode categorical variables, etc.)
 df.fillna(df.median(), inplace=True)
