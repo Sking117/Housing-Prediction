@@ -5,9 +5,14 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 import joblib
+import os
+
+st.write("Current Working Directory:", os.getcwd())
+
+print(os.listdir())  # Check available files
 
 # Load the dataset (Replace 'housing_data.csv' with actual dataset path)
-df = pd.read_csv('housing_data.csv')
+df = pd.read_csv('"C:\Users\sydne\Downloads\housing_data.csv"')
 
 # Preprocess the data (handle missing values, encode categorical variables, etc.)
 df.fillna(df.median(), inplace=True)
