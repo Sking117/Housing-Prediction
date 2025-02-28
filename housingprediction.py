@@ -1,76 +1,69 @@
-import pandas as pd
-import numpy as np
 import streamlit as st
+import pandas as pd
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
-from sklearn.ensemble import RandomForestRegressor
-import joblib
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
+import openpyxl
 
-# Load dataset
-data_path = 'housing_data.csv'
-df = pd.read_csv(data_path)
-print(df.head())  # Ensure data is loaded correctly
+# Load the dataset
+file_path = "housing_data"
+df = pd.read_excel(file_path)
 
+# Select relevant features and target variable (modify based on dataset columns)
+selected_features = ['Overall Qual', 'Gr Liv Area', 'Garage Cars', 'Total Bsmt SF', 'Full Bath', 'Year Built']
+target = 'SalePrice'
 
+df = df[selected_features + [target]].dropna()
 
-# Preprocessing
-def preprocess_data(df):
-    df = df.dropna()  # Handle missing values by dropping (can be improved)
-    df.fillna(df.mode().iloc[0], inplace=True)
-    X = df.drop(columns=['SalePrice'])  # Features (Assuming 'price' is the target variable)
-    y = df['SalePrice']  # Target
-    
-    # Identify numerical and categorical features
-    num_features = X.select_dtypes(include=['int64', 'float64']).columns
-    cat_features = X.select_dtypes(include=['object']).columns
-    
-    # Preprocessing pipeline
-    preprocessor = ColumnTransformer([
-        ('num', StandardScaler(), num_features),
-        ('cat', OneHotEncoder(handle_unknown='ignore'), cat_features)
-    ])
-    
-    return X, y, preprocessor
+# Split the data into features (X) and target (y)
+X = df[selected_features]
+y = df[target]
 
-X, y, preprocessor = preprocess_data(df)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.1, random_state=42)
+# Split into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Model training
-model = Pipeline([
-    ('preprocessor', preprocessor),
-    ('regressor', RandomForestRegressor(n_estimators=100, random_state=42))
-])
-
+# Train the model
+model = LinearRegression()
 model.fit(X_train, y_train)
 
-# Save model
-joblib.dump(model, "housing_price_model.pkl")
+# Evaluate the model
+y_pred = model.predict(X_test)
+mse = mean_squared_error(y_test, y_pred)
 
-# Streamlit App
-def main():
-    st.title("Housing Price Prediction App")
+# Create the Streamlit web app
+st.title('Ames Housing Price Prediction')
+
+# Sidebar for user inputs
+st.sidebar.header('Input House Features')
+
+def user_input_features():
+    Overall_Qual = st.sidebar.slider('Overall Quality', 1, 10, 5)
+    Gr_Liv_Area = st.sidebar.slider('Above Ground Living Area (sq ft)', 500, 5000, 1500)
+    Garage_Cars = st.sidebar.slider('Garage Cars', 0, 4, 2)
+    Total_Bsmt_SF = st.sidebar.slider('Total Basement Size (sq ft)', 0, 3000, 1000)
+    Full_Bath = st.sidebar.slider('Full Bathrooms', 0, 4, 2)
+    Year_Built = st.sidebar.slider('Year Built', 1800, 2023, 2000)
     
-    # Get user input
-    input_data = {}
-    for col in X.columns:
-        if col in df.select_dtypes(include=['object']).columns:
-            input_data[col] = st.selectbox(f"Select {col}", df[col].unique())
-        else:
-            input_data[col] = st.number_input(f"Enter {col}", value=float(df[col].median()))
-    
-    if st.button("Predict Price"):
-        input_df = pd.DataFrame([input_data])
-        prediction = model.predict(input_df)
-        st.write(f"Predicted Price: ${prediction[0]:,.2f}")
+    data = {
+        'Overall Qual': Overall_Qual,
+        'Gr Liv Area': Gr_Liv_Area,
+        'Garage Cars': Garage_Cars,
+        'Total Bsmt SF': Total_Bsmt_SF,
+        'Full Bath': Full_Bath,
+        'Year Built': Year_Built
+    }
+    return pd.DataFrame(data, index=[0])
 
-if __name__ == "__main__":
-    main()
+input_df = user_input_features()
 
-# Deployment steps:
-# 1. Save this script and the model file in a GitHub repository.
-# 2. Create a requirements.txt file with necessary libraries.
-# 3. Deploy on Streamlit Cloud using the repository URL.
+# Display user inputs
+st.subheader('User Input Parameters')
+st.write(input_df)
 
+# Predict the house price
+prediction = model.predict(input_df)
+
+# Display the prediction
+st.subheader('Predicted House Price ($)')
+st.write(f"${prediction[0]:,.2f}")
 
