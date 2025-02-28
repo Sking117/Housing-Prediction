@@ -1,55 +1,51 @@
-import streamlit as st
 import pandas as pd
+import numpy as np
+import streamlit as st
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error
+import joblib
 
-# Define `data` before using it
-data = pd.DataFrame({'A': [1, 2, 3], 'B': [4, 5, 6]})
+# Load the dataset (Replace 'housing_data.csv' with actual dataset path)
+df = pd.read_csv('housing_data.csv')
 
-# Now you can use `data`
-st.write(data)
-# Preprocess Data (Handle missing values and categorical variables if necessary)
-data = data.dropna()
-X = data.drop(columns=['Price'])
-y = data['Price']
+# Preprocess the data (handle missing values, encode categorical variables, etc.)
+df.fillna(df.median(), inplace=True)
+X = df.drop(columns=['Price'])  # Assuming 'Price' is the target variable
+y = df['Price']
 
-# Split into training and testing sets
+# Split the data
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Train a regression model
+# Train the regression model
 model = LinearRegression()
 model.fit(X_train, y_train)
+
+# Save the trained model
+joblib.dump(model, 'housing_price_model.pkl')
 
 # Evaluate the model
 y_pred = model.predict(X_test)
 mae = mean_absolute_error(y_test, y_pred)
 mse = mean_squared_error(y_test, y_pred)
-print(f"Model Performance: MAE = {mae}, MSE = {mse}")
-st.write(f"Model Performance: MAE = {mae}, MSE = {mse}")
 
-# Save the trained model
-joblib.dump(model, "housing_price_model.pkl")
+print(f"Model Evaluation: MAE={mae}, MSE={mse}")
 
 # Streamlit Web Application
-def predict_price(features):
-    model = joblib.load("housing_price_model.pkl")
-    prediction = model.predict([features])
-    return prediction[0]
+def main():
+    st.title("Housing Price Prediction")
+    st.write("Enter the details below to predict the housing price:")
+    
+    inputs = {}
+    for col in X.columns:
+        inputs[col] = st.number_input(f"Enter {col}", value=0.0)
+    
+    if st.button("Predict Price"):
+        model = joblib.load('housing_price_model.pkl')
+        input_data = np.array([list(inputs.values())]).reshape(1, -1)
+        prediction = model.predict(input_data)
+        st.write(f"Predicted Housing Price: ${prediction[0]:,.2f}")
 
-st.title("Housing Price Prediction")
-st.write("Enter the details to predict the housing price:")
+if __name__ == "__main__":
+    main()
 
-# Creating input fields dynamically based on features
-features = []
-for col in X.columns:
-    val = st.number_input(f"Enter {col}", value=0.0)
-    features.append(val)
-
-if st.button("Predict Price"):
-    predicted_price = predict_price(features)
-    print(f"Predicted Housing Price: ${predicted_price:.2f}")
-    st.write(f"Predicted Housing Price: ${predicted_price:.2f}")
-
-# Instructions to Save and Deploy on GitHub
-st.write("### Steps to Deploy:")
-st.write("1. Save this script as `app.py`.")
-st.write("2. Push the script to a GitHub repository.")
-st.write("3. Deploy using Streamlit by running `streamlit run app.py`.")
